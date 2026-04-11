@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Doomscroll Guard"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/switchEnabled"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tracking Enabled"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Checking status..."
+        app:layout_constraintTop_toBottomOf="@id/switchEnabled"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOpenAccessibility"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Open Accessibility Settings"
+        app:layout_constraintTop_toBottomOf="@id/tvStatus"
+        android:layout_marginTop="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOverlayPermission"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enable Overlay Permission"
+        app:layout_constraintTop_toBottomOf="@id/btnOpenAccessibility"
+        android:layout_marginTop="8dp" />
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="2dp"
+        app:layout_constraintTop_toBottomOf="@id/btnOverlayPermission">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Set Your Thresholds"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/labelThreshold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show Peter after 1000 scrolls" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/sliderThreshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:valueFrom="0"
+                android:valueTo="5000"
+                android:stepSize="25"
+                android:value="1000" />
+
+            <TextView
+                android:id="@+id/labelWindow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Count scrolls within 3600 seconds" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/sliderWindow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:valueFrom="0"
+                android:valueTo="7200"
+                android:stepSize="60"
+                android:value="3600" />
+
+            <TextView
+                android:id="@+id/labelCooldown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Alert cooldown: 120s (2 min)" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/sliderCooldown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:valueFrom="0"
+                android:valueTo="3600"
+                android:stepSize="30"
+                android:value="120" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

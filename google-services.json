@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "531496187539",
+    "project_id": "doomscrolling-94cac",
+    "storage_bucket": "doomscrolling-94cac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:531496187539:android:fab29ad9d19f8e6ce2ff66",
+        "android_client_info": {
+          "package_name": "com.doomscrollguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAN_ThLH_BVmGE5BeJfeL7R0Eyu2goqFcU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
