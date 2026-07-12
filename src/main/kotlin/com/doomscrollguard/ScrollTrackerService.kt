@@ -4,9 +4,12 @@ import android.accessibilityservice.AccessibilityService
 import android.animation.Animator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.app.Service
 import android.content.SharedPreferences
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.media.MediaPlayer
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -29,6 +32,8 @@ class ScrollTrackerService : AccessibilityService() {
         const val TAG = "DoomscrollGuard"
         const val CHANNEL_ID = "doomscroll_alert"
         const val NOTIF_ID = 1001
+        const val STATUS_CHANNEL_ID = "doomscroll_status"
+        const val STATUS_NOTIF_ID = 1002
 
         const val DEFAULT_SCROLL_THRESHOLD = 1000
         const val DEFAULT_WINDOW_SECONDS = 3600
@@ -51,14 +56,44 @@ class ScrollTrackerService : AccessibilityService() {
     private var overlayView: View? = null
     private lateinit var windowManager: WindowManager
     private var mediaPlayer: MediaPlayer? = null
+    private val overlayHandler = Handler(Looper.getMainLooper())
+    private var overlayTimeoutRunnable: Runnable? = null
+    private var isOverlayShowing: Boolean = false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         prefs = getSharedPreferences("doomscroll_prefs", MODE_PRIVATE)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
+        createStatusNotificationChannel()
+        startAsForegroundService()
         isTracking = prefs.getBoolean("tracking_enabled", true)
         Log.d(TAG, "ScrollTrackerService connected.")
+    }
+
+    // Running as a foreground service (with this persistent low-priority notification)
+    // gives the process much stronger protection from OS/OEM background-process freezing
+    // (e.g. Samsung's Freecess) than a bare bound AccessibilityService gets on its own.
+    // Without it, the process can be frozen mid-overlay-animation, leaving the Peter
+    // overlay stuck on screen forever since its cleanup callbacks never get to run.
+    private fun startAsForegroundService() {
+        val notification = NotificationCompat.Builder(this, STATUS_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("DoomscrollGuard is watching")
+            .setContentText("Tracking scroll activity in the background")
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setOngoing(true)
+            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                STATUS_NOTIF_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(STATUS_NOTIF_ID, notification)
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -200,6 +235,7 @@ class ScrollTrackerService : AccessibilityService() {
     }
 
     private fun triggerPeterAlert() {
+        if (isOverlayShowing) return
         if (Settings.canDrawOverlays(this)) {
             showPeterOverlay()
             playPeterVoice()
@@ -222,8 +258,9 @@ class ScrollTrackerService : AccessibilityService() {
 
     @SuppressLint("InflateParams")
     private fun showPeterOverlay() {
-        Handler(Looper.getMainLooper()).post {
-            removeOverlay()
+        isOverlayShowing = true
+        overlayHandler.post {
+            detachOverlayView()
 
             val inflater = LayoutInflater.from(this)
             overlayView = inflater.inflate(R.layout.overlay_peter, null)
@@ -249,42 +286,71 @@ class ScrollTrackerService : AccessibilityService() {
 
             windowManager.addView(overlayView, params)
 
-            // Animate Peter across the screen using ValueAnimator
-            val animator = ValueAnimator.ofFloat(screenWidth.toFloat(), -(peterImage?.width?.toFloat() ?: 100f))
-            animator.duration = 3000L // 3 seconds for smooth glide
-            animator.addUpdateListener { animation ->
-                val x = animation.animatedValue as Float
-                params.x = x.toInt()
-                if (overlayView != null && overlayView?.windowToken != null) {
-                    try {
-                        windowManager.updateViewLayout(overlayView, params)
-                    } catch (e: IllegalArgumentException) {
-                        Log.e(TAG, "Overlay view no longer attached", e)
+            // Safety net: if the animator callback never fires (e.g. this process gets
+            // frozen mid-animation by OS/OEM background-process management), the overlay
+            // window would otherwise stay attached forever since it's owned by the system
+            // compositor, not this process. Force it down after a generous timeout.
+            overlayTimeoutRunnable?.let { overlayHandler.removeCallbacks(it) }
+            val timeoutRunnable = Runnable {
+                removeOverlay()
+                NotificationManagerCompat.from(this@ScrollTrackerService).cancel(NOTIF_ID)
+            }
+            overlayTimeoutRunnable = timeoutRunnable
+            overlayHandler.postDelayed(timeoutRunnable, 6000L)
+
+            // Defer animator setup until after layout so peterImage.width is measured.
+            overlayView?.post {
+                val animator = ValueAnimator.ofFloat(
+                    screenWidth.toFloat(),
+                    -(peterImage?.width?.takeIf { it > 0 }?.toFloat() ?: 300f)
+                )
+                animator.duration = 3000L // 3 seconds for smooth glide
+                animator.addUpdateListener { animation ->
+                    val x = animation.animatedValue as Float
+                    params.x = x.toInt()
+                    if (overlayView != null && overlayView?.windowToken != null) {
+                        try {
+                            windowManager.updateViewLayout(overlayView, params)
+                        } catch (e: IllegalArgumentException) {
+                            Log.e(TAG, "Overlay view no longer attached", e)
+                        }
                     }
                 }
+
+                animator.start()
+
+                // Remove overlay after animation completes
+                animator.addListener(object : Animator.AnimatorListener {
+                    override fun onAnimationStart(animation: Animator) {}
+                    override fun onAnimationRepeat(animation: Animator) {}
+                    override fun onAnimationEnd(animation: Animator) {
+                        removeOverlay()
+                        NotificationManagerCompat.from(this@ScrollTrackerService).cancel(NOTIF_ID)
+                    }
+                    override fun onAnimationCancel(animation: Animator) {}
+                })
             }
-
-            animator.start()
-
-            // Remove overlay after animation completes
-            animator.addListener(object : Animator.AnimatorListener {
-                override fun onAnimationStart(animation: Animator) {}
-                override fun onAnimationRepeat(animation: Animator) {}
-                override fun onAnimationEnd(animation: Animator) {
-                    removeOverlay()
-                    NotificationManagerCompat.from(this@ScrollTrackerService).cancel(NOTIF_ID)
-                }
-                override fun onAnimationCancel(animation: Animator) {}
-            })
         }
     }
 
-
-
+    /** Fully dismisses the overlay: tears down the view and clears the "showing" flag. */
     private fun removeOverlay() {
+        detachOverlayView()
+        isOverlayShowing = false
+    }
+
+    /** Tears down whatever overlay view is currently attached, without clearing
+     *  isOverlayShowing -- used when swapping in a fresh view for a new alert. */
+    private fun detachOverlayView() {
+        overlayTimeoutRunnable?.let { overlayHandler.removeCallbacks(it) }
+        overlayTimeoutRunnable = null
         overlayView?.let {
             if (it.windowToken != null) {
-                windowManager.removeView(it)
+                try {
+                    windowManager.removeView(it)
+                } catch (e: IllegalArgumentException) {
+                    Log.e(TAG, "Overlay view already detached", e)
+                }
             }
             overlayView = null
         }
@@ -313,6 +379,14 @@ class ScrollTrackerService : AccessibilityService() {
         NotificationManagerCompat.from(this).createNotificationChannel(channel)
     }
 
+    private fun createStatusNotificationChannel() {
+        val channel = NotificationChannelCompat.Builder(STATUS_CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_MIN)
+            .setName("DoomscrollGuard Status")
+            .setDescription("Persistent notification that keeps scroll tracking running reliably")
+            .build()
+        NotificationManagerCompat.from(this).createNotificationChannel(channel)
+    }
+
     private fun getScrollThreshold() = prefs.getInt("scroll_threshold", DEFAULT_SCROLL_THRESHOLD)
     private fun getScrollWindowSeconds() = prefs.getInt("window_seconds", DEFAULT_WINDOW_SECONDS)
     private fun getCooldownSeconds() = prefs.getInt("cooldown_seconds", DEFAULT_COOLDOWN_SECONDS)
@@ -321,6 +395,8 @@ class ScrollTrackerService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        stopForeground(Service.STOP_FOREGROUND_REMOVE)
+        removeOverlay()
         mediaPlayer?.release()
     }
 }
