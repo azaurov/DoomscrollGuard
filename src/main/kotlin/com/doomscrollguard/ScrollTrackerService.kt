@@ -1,11 +1,12 @@
 package com.doomscrollguard
 
 import android.accessibilityservice.AccessibilityService
-import android.content.Context
+import android.animation.Animator
+import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.graphics.PixelFormat
 import android.media.MediaPlayer
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -15,10 +16,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.animation.TranslateAnimation
+import android.widget.ImageView
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
+@SuppressLint("AccessibilityPolicy")
 class ScrollTrackerService : AccessibilityService() {
 
     companion object {
@@ -50,7 +54,7 @@ class ScrollTrackerService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        prefs = getSharedPreferences("doomscroll_prefs", Context.MODE_PRIVATE)
+        prefs = getSharedPreferences("doomscroll_prefs", MODE_PRIVATE)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
         isTracking = prefs.getBoolean("tracking_enabled", true)
@@ -88,17 +92,114 @@ class ScrollTrackerService : AccessibilityService() {
                     if (now - lastAlertTime > cooldownMs) {
                         lastAlertTime = now
                         scrollTimestamps.clear()
-                        triggerPeterAlert(pkg)
+                        triggerPeterAlert()
                     }
                 }
+            }
+
+            AccessibilityEvent.TYPE_ANNOUNCEMENT -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_ASSIST_READING_CONTEXT -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_GESTURE_DETECTION_END -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_GESTURE_DETECTION_START -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_SPEECH_STATE_CHANGE -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_END -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_START -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_TOUCH_INTERACTION_END -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_TOUCH_INTERACTION_START -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_CONTEXT_CLICKED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_HOVER_ENTER -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_HOVER_EXIT -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_SELECTED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_TARGETED_BY_SCROLL -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
+                TODO()
+            }
+
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                TODO()
             }
         }
     }
 
-    private fun triggerPeterAlert(packageName: String) {
-        val appName = getFriendlyName(packageName)
-        sendNotification(appName)
-        
+    private fun triggerPeterAlert() {
         if (Settings.canDrawOverlays(this)) {
             showPeterOverlay()
             playPeterVoice()
@@ -119,37 +220,66 @@ class ScrollTrackerService : AccessibilityService() {
         }
     }
 
+    @SuppressLint("InflateParams")
     private fun showPeterOverlay() {
         Handler(Looper.getMainLooper()).post {
             removeOverlay()
 
             val inflater = LayoutInflater.from(this)
             overlayView = inflater.inflate(R.layout.overlay_peter, null)
+            val peterImage = overlayView?.findViewById<ImageView>(R.id.peter_image)
 
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                else
-                    @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT
-            ).apply {
-                gravity = Gravity.CENTER
+            )
+
+            // Get screen dimensions
+            val displayMetrics = resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+            val screenHeight = displayMetrics.heightPixels
+
+            // Position Peter off-screen to the right
+            params.gravity = Gravity.TOP or Gravity.START
+            params.x = screenWidth // Start off-screen to the right
+            params.y = (screenHeight * 0.3f).toInt() // 30% from top
+
+            windowManager.addView(overlayView, params)
+
+            // Animate Peter across the screen using ValueAnimator
+            val animator = ValueAnimator.ofFloat(screenWidth.toFloat(), -(peterImage?.width?.toFloat() ?: 100f))
+            animator.duration = 3000L // 3 seconds for smooth glide
+            animator.addUpdateListener { animation ->
+                val x = animation.animatedValue as Float
+                params.x = x.toInt()
+                if (overlayView != null && overlayView?.windowToken != null) {
+                    try {
+                        windowManager.updateViewLayout(overlayView, params)
+                    } catch (e: IllegalArgumentException) {
+                        Log.e(TAG, "Overlay view no longer attached", e)
+                    }
+                }
             }
 
-            try {
-                windowManager.addView(overlayView, params)
-                
-                Handler(Looper.getMainLooper()).postDelayed({
+            animator.start()
+
+            // Remove overlay after animation completes
+            animator.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(animation: Animator) {}
+                override fun onAnimationRepeat(animation: Animator) {}
+                override fun onAnimationEnd(animation: Animator) {
                     removeOverlay()
-                }, 4000) // Slightly longer to match the voice line
-            } catch (e: Exception) {
-                Log.e(TAG, "Error adding overlay", e)
-            }
+                    NotificationManagerCompat.from(this@ScrollTrackerService).cancel(NOTIF_ID)
+                }
+                override fun onAnimationCancel(animation: Animator) {}
+            })
         }
     }
+
+
 
     private fun removeOverlay() {
         overlayView?.let {
@@ -160,7 +290,7 @@ class ScrollTrackerService : AccessibilityService() {
         }
     }
 
-    private fun sendNotification(appName: String) {
+    private fun sendNotification() {
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("Peter Griffin says:")
@@ -170,7 +300,7 @@ class ScrollTrackerService : AccessibilityService() {
 
         try {
             NotificationManagerCompat.from(this).notify(NOTIF_ID, builder.build())
-        } catch (e: SecurityException) {
+        } catch (_: SecurityException) {
             Log.e(TAG, "No notification permission")
         }
     }
@@ -186,15 +316,6 @@ class ScrollTrackerService : AccessibilityService() {
     private fun getScrollThreshold() = prefs.getInt("scroll_threshold", DEFAULT_SCROLL_THRESHOLD)
     private fun getScrollWindowSeconds() = prefs.getInt("window_seconds", DEFAULT_WINDOW_SECONDS)
     private fun getCooldownSeconds() = prefs.getInt("cooldown_seconds", DEFAULT_COOLDOWN_SECONDS)
-
-    private fun getFriendlyName(pkg: String): String = when (pkg) {
-        "com.instagram.android" -> "Instagram"
-        "com.zhiliaoapp.musically", "com.ss.android.ugc.trill" -> "TikTok"
-        "com.twitter.android" -> "X"
-        "com.reddit.frontpage" -> "Reddit"
-        "com.google.android.youtube" -> "YouTube"
-        else -> "this app"
-    }
 
     override fun onInterrupt() {}
 

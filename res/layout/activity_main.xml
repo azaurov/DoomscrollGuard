@@ -10,7 +10,7 @@
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Doomscroll Guard"
+        android:text="@string/doomscroll_guard"
         android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintTop_toTopOf="parent"
@@ -20,7 +20,7 @@
         android:id="@+id/switchEnabled"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tracking Enabled"
+        android:text="@string/tracking_enabled"
         app:layout_constraintTop_toBottomOf="@id/tvTitle"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="16dp" />
@@ -29,7 +29,7 @@
         android:id="@+id/tvStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Checking status..."
+        android:text="@string/checking_status"
         app:layout_constraintTop_toBottomOf="@id/switchEnabled"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="8dp" />
@@ -38,7 +38,7 @@
         android:id="@+id/btnOpenAccessibility"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Open Accessibility Settings"
+        android:text="@string/open_accessibility_settings"
         app:layout_constraintTop_toBottomOf="@id/tvStatus"
         android:layout_marginTop="8dp" />
 
@@ -46,7 +46,7 @@
         android:id="@+id/btnOverlayPermission"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Enable Overlay Permission"
+        android:text="@string/enable_overlay_permission"
         app:layout_constraintTop_toBottomOf="@id/btnOpenAccessibility"
         android:layout_marginTop="8dp" />
 
@@ -67,7 +67,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Set Your Thresholds"
+                android:text="@string/set_your_thresholds"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp"/>
@@ -76,7 +76,7 @@
                 android:id="@+id/labelThreshold"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Show Peter after 1000 scrolls" />
+                android:text="@string/show_peter_after_1000_scrolls" />
 
             <com.google.android.material.slider.Slider
                 android:id="@+id/sliderThreshold"
@@ -92,7 +92,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Count scrolls within 3600 seconds" />
+                android:text="@string/count_scrolls_within_3600_seconds" />
 
             <com.google.android.material.slider.Slider
                 android:id="@+id/sliderWindow"
@@ -108,7 +108,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Alert cooldown: 120s (2 min)" />
+                android:text="@string/alert_cooldown_120s_2_min" />
 
             <com.google.android.material.slider.Slider
                 android:id="@+id/sliderCooldown"

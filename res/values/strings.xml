@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">DoomscrollGuard</string>
+    <string name="doomscroll_guard">Doomscroll Guard</string>
+    <string name="tracking_enabled">Tracking Enabled</string>
+    <string name="checking_status">Checking status...</string>
+    <string name="open_accessibility_settings">Open Accessibility Settings</string>
+    <string name="enable_overlay_permission">Enable Overlay Permission</string>
+    <string name="set_your_thresholds">Set Your Thresholds</string>
+    <string name="show_peter_after_1000_scrolls">Show Peter after 1000 scrolls</string>
+    <string name="count_scrolls_within_3600_seconds">Count scrolls within 3600 seconds</string>
+    <string name="alert_cooldown_120s_2_min">Alert cooldown: 120s (2 min)</string>
 </resources>
