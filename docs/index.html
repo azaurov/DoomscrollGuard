@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>DoomscrollGuard</title>
+<meta name="description" content="Vibrates your Amazfit GTR 3 when you've been doomscrolling on your phone." />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="theme-color" content="#0b0b12" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #14141b;
+    --muted: #5b5b68;
+    --card: #f4f4f7;
+    --border: #e2e2e8;
+    --accent: #6a5cff;
+    --accent-fg: #ffffff;
+    --warn-bg: #fff6e5;
+    --warn-border: #f0d99a;
+    --warn-fg: #6b5200;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0b12;
+      --fg: #f1f1f5;
+      --muted: #a3a3b2;
+      --card: #16161f;
+      --border: #26262f;
+      --accent: #8b7dff;
+      --accent-fg: #0b0b12;
+      --warn-bg: #2a2210;
+      --warn-border: #4a3c14;
+      --warn-fg: #e8c565;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0b12; --fg: #f1f1f5; --muted: #a3a3b2; --card: #16161f;
+    --border: #26262f; --accent: #8b7dff; --accent-fg: #0b0b12;
+    --warn-bg: #2a2210; --warn-border: #4a3c14; --warn-fg: #e8c565;
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --fg: #14141b; --muted: #5b5b68; --card: #f4f4f7;
+    --border: #e2e2e8; --accent: #6a5cff; --accent-fg: #ffffff;
+    --warn-bg: #fff6e5; --warn-border: #f0d99a; --warn-fg: #6b5200;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+  }
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  header img {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+  h1 { font-size: 1.6rem; margin: 0; }
+  .tagline { color: var(--muted); margin: 0.2rem 0 0; }
+  p { color: var(--fg); }
+  .muted { color: var(--muted); }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-color: transparent;
+  }
+  .btn-secondary {
+    background: var(--card);
+    color: var(--fg);
+  }
+  .btn[hidden] { display: none; }
+  section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
+    margin-bottom: 1.25rem;
+  }
+  section h2 {
+    font-size: 1.05rem;
+    margin: 0 0 0.6rem;
+  }
+  ol, ul { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+  li { margin-bottom: 0.35rem; }
+  code {
+    background: var(--border);
+    border-radius: 4px;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.85em;
+  }
+  .warn {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    color: var(--warn-fg);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.92rem;
+  }
+  footer {
+    margin-top: 2rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="icons/icon-192.png" alt="DoomscrollGuard icon" />
+    <div>
+      <h1>DoomscrollGuard</h1>
+      <p class="tagline">Vibrates your Amazfit GTR 3 when you've been doomscrolling.</p>
+    </div>
+  </header>
+
+  <div class="warn">
+    <strong>Android only.</strong> DoomscrollGuard is a native Android app — it needs
+    an <code>AccessibilityService</code> and "draw over other apps" permission that a
+    web page cannot grant. This site is an installable shortcut/info hub, not the app
+    itself. There is no iOS build; iOS does not expose the accessibility APIs this
+    project relies on.
+  </div>
+
+  <div class="actions">
+    <button id="install-btn" class="btn btn-primary" hidden>Add this page to Home Screen</button>
+    <a class="btn btn-secondary" href="https://github.com/azaurov/DoomscrollGuard/releases" target="_blank" rel="noopener">
+      Download APK (Releases)
+    </a>
+    <a class="btn btn-secondary" href="https://github.com/azaurov/DoomscrollGuard" target="_blank" rel="noopener">
+      View Source
+    </a>
+  </div>
+
+  <section>
+    <h2>How it works</h2>
+    <ol>
+      <li>An AccessibilityService on your phone counts scroll events in social apps.</li>
+      <li>Scroll past your threshold within the time window → the app fires a notification.</li>
+      <li>The Zepp app mirrors that notification to your GTR 3 → the watch vibrates.</li>
+    </ol>
+    <p class="muted">No content is ever read — only scroll event counts.</p>
+  </section>
+
+  <section>
+    <h2>Install the app</h2>
+    <ol>
+      <li>Download the APK from the <a href="https://github.com/azaurov/DoomscrollGuard/releases" target="_blank" rel="noopener">Releases page</a> (or build it yourself from source in Android Studio) and sideload it.</li>
+      <li>Open DoomscrollGuard, tap <strong>Enable Accessibility Permission</strong>, and turn it on for DoomscrollGuard.</li>
+      <li>Grant the overlay ("draw over other apps") permission when prompted.</li>
+      <li>In the <strong>Zepp</strong> app: Profile → GTR 3 → Notifications → enable App Alerts, and make sure DoomscrollGuard is toggled on.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <a href="https://github.com/azaurov/DoomscrollGuard" target="_blank" rel="noopener">github.com/azaurov/DoomscrollGuard</a>
+  </footer>
+</main>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+
+  let deferredPrompt = null;
+  const installBtn = document.getElementById("install-btn");
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    installBtn.hidden = true;
+  });
+</script>
+</body>
+</html>
