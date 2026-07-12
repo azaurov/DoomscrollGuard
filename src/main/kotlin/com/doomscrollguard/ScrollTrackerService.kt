@@ -102,6 +102,11 @@ class ScrollTrackerService : AccessibilityService() {
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 val pkg = event.packageName?.toString() ?: return
+                // The Peter overlay window itself can generate a WINDOW_STATE_CHANGED
+                // event attributed to our own package. Without this guard, showing the
+                // overlay while some other app is currentPackage immediately triggers
+                // "app switched" cleanup and tears the overlay down mid-animation.
+                if (pkg == packageName) return
                 if (pkg != currentPackage) {
                     currentPackage = pkg
                     scrollTimestamps.clear()
